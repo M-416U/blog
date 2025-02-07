@@ -1,4 +1,3 @@
-import { Express } from "express";
 import {
   Controller,
   Post,
@@ -10,6 +9,7 @@ import {
   UploadedFile,
   BadRequestException,
   UseInterceptors,
+  Get,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -30,14 +30,15 @@ import { UpdateInterestsDto } from "./dto/update-interests.dto";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { CloudinaryService } from "nestjs-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryService } from "src/cloudinary/cloudinary.service";
 
 @ApiTags("Users")
 @Controller("users")
 export class UsersController {
   constructor(
     private usersService: UsersService,
-    private cloudinary: CloudinaryService
+    private readonly cloudinaryService: CloudinaryService
   ) {}
 
   @Post("admins")
@@ -102,8 +103,41 @@ export class UsersController {
       updateInterestsDto.interests
     );
   }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get all users" })
+  @ApiResponse({ status: 200, description: "All users retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async findAll() {
+    return this.usersService.findMany({});
+  }
+  @Get("me")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current user profile" })
+  @ApiResponse({ status: 200, description: "Profile retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async getProfile(@Request() req: { user: User }) {
+    return req.user;
+  }
+  @Get(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get user by ID" })
+  @ApiResponse({ status: 200, description: "User retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 404, description: "User not found" })
+  async findOne(@Param("id") id: string) {
+    return this.usersService.findOne(id);
+  }
+
   @Post("me/avatar")
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor("file"))
   @ApiConsumes("multipart/form-data")
   @ApiBody({
@@ -121,17 +155,19 @@ export class UsersController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req: { user: User }
   ) {
-    const result = await this.cloudinary
-      .uploadFile(file, {
-        folder: "avatars",
-        allowed_formats: ["jpg", "png", "jpeg"],
-      })
-      .catch(() => {
-        throw new BadRequestException("Invalid file type");
-      });
+    try {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
 
-    return this.usersService.updateProfile(req.user._id, {
-      profilePicture: result.secure_url,
-    });
+      return this.usersService.updateProfile(req.user._id, {
+        profilePicture: uploadResult.secure_url,
+      });
+    } catch (error) {
+      console.log(error);
+      return {
+        status: 500,
+        message: "Failed to upload avatar",
+        error: error.message,
+      };
+    }
   }
 }

@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { FilterQuery, Model } from "mongoose";
 import * as bcrypt from "bcryptjs";
 import { User } from "./schemas/user.schema";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -59,9 +59,16 @@ export class UsersService {
     };
   }
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
+    console.log(updateData);
     return this.userModel
-      .findByIdAndUpdate(userId, { $set: updateData }, { new: true })
+      .findOneAndDelete({ _id: userId }, { $set: updateData })
       .select("-passwordHash");
+  }
+  async findOne(userId: string) {
+    return this.userModel.findById(userId).select("-passwordHash -_v");
+  }
+  async findMany(query: FilterQuery<User>) {
+    return this.userModel.find(query).select("-passwordHash -_v");
   }
 
   async changePassword(
@@ -70,7 +77,6 @@ export class UsersService {
     newPassword: string
   ) {
     const user = await this.userModel.findById(userId);
-    console.log(user);
     if (!(await bcrypt.compare(oldPassword, user.passwordHash))) {
       throw new UnauthorizedException("Invalid old password");
     }

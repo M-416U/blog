@@ -7,7 +7,7 @@ import { PostsModule } from "./posts/posts.module";
 import { TrackingModule } from "./tracking/tracking.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { SuggestionsModule } from "./suggestions/suggestions.module";
-import { CloudinaryConfigModule } from "./cloudinary/cloudinary.module";
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { CloudinaryConfigModule } from "./cloudinary/cloudinary.module";
     TrackingModule,
     AnalyticsModule,
     SuggestionsModule,
-    CloudinaryConfigModule,
+    CloudinaryModule,
   ],
   controllers: [],
   providers: [],
