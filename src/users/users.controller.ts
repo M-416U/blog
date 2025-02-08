@@ -25,14 +25,13 @@ import { UpdateRoleDto } from "./dto/update-role.dto";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
-import { User } from "./schemas/user.schema";
 import { UpdateInterestsDto } from "./dto/update-interests.dto";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryService } from "src/cloudinary/cloudinary.service";
 import { UserPreferencesDto } from "./dto/preferences.dto";
+import { JWTUser } from "@types";
 
 @ApiTags("Users")
 @Controller("users")
@@ -50,7 +49,7 @@ export class UsersController {
   @ApiResponse({ status: 201, description: "Admin created successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async createAdmin(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.createAdmin(createUserDto);
+    return await this.usersService.createAdmin(createUserDto);
   }
 
   @Put(":id/role")
@@ -65,27 +64,38 @@ export class UsersController {
     @Param("id") userId: string,
     @Body() updateRoleDto: UpdateRoleDto
   ) {
-    return this.usersService.updateRole(userId, updateRoleDto.role);
+    return await this.usersService.updateRole(userId, updateRoleDto.role);
   }
-
+  @Get("me")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current user profile" })
+  @ApiResponse({ status: 200, description: "Profile retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async getProfile(@Request() req: { user: any }) {
+    return await this.usersService.findOne(req.user.userId);
+  }
   @Put("me")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async updateProfile(
-    @Request() req: { user: User },
+    @Request() req: { user: JWTUser },
     @Body() updateProfileDto: UpdateProfileDto
   ) {
-    return this.usersService.updateProfile(req.user._id, updateProfileDto);
+    return await this.usersService.updateProfile(
+      req.user.userId,
+      updateProfileDto
+    );
   }
 
   @Put("me/password")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async changePassword(
-    @Request() req: { user: any },
+    @Request() req: { user: JWTUser },
     @Body() updatePasswordDto: UpdatePasswordDto
   ) {
-    return this.usersService.changePassword(
+    return await this.usersService.changePassword(
       req.user.userId,
       updatePasswordDto.oldPassword,
       updatePasswordDto.newPassword
@@ -96,11 +106,11 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async updateInterests(
-    @Request() req: { user: User },
+    @Request() req: { user: JWTUser },
     @Body() updateInterestsDto: UpdateInterestsDto
   ) {
-    return this.usersService.updateInterests(
-      req.user._id,
+    return await this.usersService.updateInterests(
+      req.user.userId,
       updateInterestsDto.interests
     );
   }
@@ -110,18 +120,21 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Save user preferences" })
   async savePreferences(
-    @Request() req: { user: User },
+    @Request() req: { user: JWTUser },
     @Body() preferencesDto: UserPreferencesDto
   ) {
-    return this.usersService.savePreferences(req.user._id, preferencesDto);
+    return await this.usersService.savePreferences(
+      req.user.userId,
+      preferencesDto
+    );
   }
 
   @Get("preferences")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get user preferences" })
-  async getPreferences(@Request() req: { user: User }) {
-    return this.usersService.getPreferences(req.user._id);
+  async getPreferences(@Request() req: { user: JWTUser }) {
+    return await this.usersService.getPreferences(req.user.userId);
   }
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -131,17 +144,9 @@ export class UsersController {
   @ApiResponse({ status: 200, description: "All users retrieved successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async findAll() {
-    return this.usersService.findMany({});
+    return await this.usersService.findMany({});
   }
-  @Get("me")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: "Get current user profile" })
-  @ApiResponse({ status: 200, description: "Profile retrieved successfully" })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getProfile(@Request() req: { user: User }) {
-    return req.user;
-  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin", "superadmin")
@@ -151,7 +156,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "User not found" })
   async findOne(@Param("id") id: string) {
-    return this.usersService.findOne(id);
+    return await this.usersService.findOne(id);
   }
 
   @Post("me/avatar")
@@ -172,16 +177,15 @@ export class UsersController {
   })
   async uploadAvatar(
     @UploadedFile() file: Express.Multer.File,
-    @Request() req: { user: User }
+    @Request() req: { user: JWTUser }
   ) {
     try {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
 
-      return this.usersService.updateProfile(req.user._id, {
+      return await this.usersService.updateProfile(req.user.userId, {
         profilePicture: uploadResult.secure_url,
       });
     } catch (error) {
-      console.log(error);
       return {
         status: 500,
         message: "Failed to upload avatar",
