@@ -18,7 +18,17 @@ export class Post {
 
   @Prop({ type: [String] })
   tags: string[];
+  @Prop({ default: false })
+  published: boolean;
 
+  @Prop()
+  publishedAt?: Date;
+
+  @Prop({ default: false })
+  featured: boolean;
+
+  @Prop()
+  featuredAt?: Date;
   @Prop({ default: Date.now })
   createdAt: Date;
 }

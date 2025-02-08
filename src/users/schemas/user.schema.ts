@@ -32,6 +32,20 @@ export class User extends Document {
     default: [],
   })
   viewedPosts: Array<{ postId: mongoose.Types.ObjectId; viewedAt: Date }>;
+
+  @Prop({
+    type: Object,
+    default: {
+      emailNotifications: true,
+      preferredTags: [],
+      theme: "light",
+    },
+  })
+  preferences: {
+    emailNotifications: boolean;
+    preferredTags: string[];
+    theme: string;
+  };
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

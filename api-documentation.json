@@ -1,0 +1,256 @@
+{
+  "auth": {
+    "POST /auth/login": {
+      "description": "Authenticate user and get JWT token",
+      "body": {
+        "email": "string",
+        "password": "string"
+      },
+      "responses": {
+        "200": {
+          "description": "Login successful",
+          "data": {
+            "token": "string",
+            "user": {
+              "id": "string",
+              "email": "string",
+              "role": "string"
+            }
+          }
+        },
+        "401": {
+          "description": "Invalid credentials"
+        }
+      }
+    },
+    "POST /auth/register": {
+      "description": "Register new user",
+      "body": {
+        "email": "string",
+        "password": "string",
+        "role": "enum['superadmin', 'admin', 'writer', 'user']"
+      },
+      "responses": {
+        "201": {
+          "description": "User registered successfully"
+        },
+        "400": {
+          "description": "Email already exists"
+        }
+      }
+    }
+  },
+  "posts": {
+    "GET /posts": {
+      "description": "Get paginated posts list",
+      "query": {
+        "page": "number",
+        "limit": "number",
+        "tag": "string?",
+        "author": "string?"
+      },
+      "responses": {
+        "200": {
+          "description": "List of posts with pagination metadata"
+        }
+      }
+    },
+    "POST /posts": {
+      "description": "Create new post",
+      "auth": "required",
+      "roles": ["writer", "admin"],
+      "body": {
+        "title": "string",
+        "content": "string",
+        "tags": "string[]"
+      },
+      "responses": {
+        "201": {
+          "description": "Post created successfully"
+        },
+        "403": {
+          "description": "Insufficient permissions"
+        }
+      }
+    },
+    "GET /posts/:id": {
+      "description": "Get post by ID",
+      "responses": {
+        "200": {
+          "description": "Post details"
+        },
+        "404": {
+          "description": "Post not found"
+        }
+      }
+    },
+    "PUT /posts/:id": {
+      "description": "Update post",
+      "auth": "required",
+      "roles": ["writer", "admin"],
+      "responses": {
+        "200": {
+          "description": "Post updated successfully"
+        },
+        "403": {
+          "description": "Not authorized to update"
+        },
+        "404": {
+          "description": "Post not found"
+        }
+      }
+    },
+    "DELETE /posts/:id": {
+      "description": "Delete post",
+      "auth": "required",
+      "roles": ["writer", "admin"],
+      "responses": {
+        "200": {
+          "description": "Post deleted successfully"
+        },
+        "403": {
+          "description": "Not authorized to delete"
+        },
+        "404": {
+          "description": "Post not found"
+        }
+      }
+    },
+    "POST /posts/:id/publish": {
+      "description": "Toggle post publish status",
+      "auth": "required",
+      "roles": ["writer", "admin"],
+      "body": {
+        "status": "boolean"
+      },
+      "responses": {
+        "200": {
+          "description": "Publish status updated"
+        }
+      }
+    },
+    "POST /posts/:id/feature": {
+      "description": "Toggle post feature status",
+      "auth": "required",
+      "roles": ["admin"],
+      "body": {
+        "status": "boolean"
+      },
+      "responses": {
+        "200": {
+          "description": "Feature status updated"
+        }
+      }
+    }
+  },
+  "users": {
+    "GET /users/me": {
+      "description": "Get current user profile",
+      "auth": "required",
+      "responses": {
+        "200": {
+          "description": "User profile data"
+        }
+      }
+    },
+    "PUT /users/me": {
+      "description": "Update current user profile",
+      "auth": "required",
+      "body": {
+        "username": "string?",
+        "interests": "string[]?"
+      },
+      "responses": {
+        "200": {
+          "description": "Profile updated successfully"
+        }
+      }
+    },
+    "POST /users/preferences": {
+      "description": "Save user preferences",
+      "auth": "required",
+      "body": {
+        "emailNotifications": "boolean?",
+        "preferredTags": "string[]?",
+        "theme": "string?"
+      },
+      "responses": {
+        "200": {
+          "description": "Preferences saved successfully"
+        }
+      }
+    },
+    "GET /users/preferences": {
+      "description": "Get user preferences",
+      "auth": "required",
+      "responses": {
+        "200": {
+          "description": "User preferences data"
+        }
+      }
+    }
+  },
+  "analytics": {
+    "GET /analytics/views/time": {
+      "description": "Get views grouped by time period",
+      "auth": "required",
+      "roles": ["admin", "superadmin"],
+      "query": {
+        "period": "enum['daily', 'weekly', 'monthly']"
+      },
+      "responses": {
+        "200": {
+          "description": "View statistics"
+        }
+      }
+    },
+    "GET /analytics/posts/popular": {
+      "description": "Get popular posts",
+      "auth": "required",
+      "roles": ["admin", "superadmin"],
+      "query": {
+        "limit": "number"
+      },
+      "responses": {
+        "200": {
+          "description": "Popular posts list"
+        }
+      }
+    },
+    "GET /analytics/users/registrations": {
+      "description": "Get user registration trends",
+      "auth": "required",
+      "roles": ["admin", "superadmin"],
+      "query": {
+        "period": "enum['daily', 'weekly', 'monthly']"
+      },
+      "responses": {
+        "200": {
+          "description": "Registration statistics"
+        }
+      }
+    }
+  },
+  "tracking": {
+    "POST /tracking/posts/:postId/view": {
+      "description": "Track post view",
+      "auth": "optional",
+      "responses": {
+        "200": {
+          "description": "View tracked successfully"
+        }
+      }
+    }
+  },
+  "suggestions": {
+    "GET /suggestions": {
+      "description": "Get personalized post suggestions",
+      "auth": "required",
+      "responses": {
+        "200": {
+          "description": "List of suggested posts"
+        }
+      }
+    }
+  }
+}

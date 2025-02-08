@@ -9,6 +9,7 @@ import * as bcrypt from "bcryptjs";
 import { User } from "./schemas/user.schema";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { UserPreferencesDto } from "./dto/preferences.dto";
 
 @Injectable()
 export class UsersService {
@@ -83,7 +84,22 @@ export class UsersService {
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     return user.save();
   }
+  async savePreferences(
+    userId: string,
+    preferences: UserPreferencesDto
+  ): Promise<User> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(userId, { preferences }, { new: true })
+      .select("preferences");
 
+    return updatedUser;
+  }
+
+  async getPreferences(userId: string) {
+    const user = await this.userModel.findById(userId).select("preferences");
+
+    return user.preferences;
+  }
   async updateInterests(userId: string, interests: string[]) {
     return this.userModel
       .findByIdAndUpdate(userId, { $set: { interests } }, { new: true })

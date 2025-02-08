@@ -32,6 +32,7 @@ import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryService } from "src/cloudinary/cloudinary.service";
+import { UserPreferencesDto } from "./dto/preferences.dto";
 
 @ApiTags("Users")
 @Controller("users")
@@ -104,9 +105,27 @@ export class UsersController {
     );
   }
 
+  @Post("preferences")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Save user preferences" })
+  async savePreferences(
+    @Request() req: { user: User },
+    @Body() preferencesDto: UserPreferencesDto
+  ) {
+    return this.usersService.savePreferences(req.user._id, preferencesDto);
+  }
+
+  @Get("preferences")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get user preferences" })
+  async getPreferences(@Request() req: { user: User }) {
+    return this.usersService.getPreferences(req.user._id);
+  }
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles("admin", "superadmin")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get all users" })
   @ApiResponse({ status: 200, description: "All users retrieved successfully" })
@@ -125,7 +144,7 @@ export class UsersController {
   }
   @Get(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
+  @Roles("admin", "superadmin")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get user by ID" })
   @ApiResponse({ status: 200, description: "User retrieved successfully" })
