@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model } from "mongoose";
+import mongoose, { FilterQuery, Model } from "mongoose";
 import * as bcrypt from "bcryptjs";
 import { User } from "./schemas/user.schema";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -60,13 +60,14 @@ export class UsersService {
     };
   }
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
-    console.log(updateData);
     return this.userModel
       .findOneAndDelete({ _id: userId }, { $set: updateData })
       .select("-passwordHash");
   }
   async findOne(userId: string) {
-    return this.userModel.findById(userId).select("-passwordHash -_v");
+    return await this.userModel
+      .findOne({ _id: new mongoose.Types.ObjectId(userId) })
+      .select("-passwordHash -_v");
   }
   async findMany(query: FilterQuery<User>) {
     return this.userModel.find(query).select("-passwordHash -_v");
