@@ -13,7 +13,7 @@ export class User extends Document {
   role: string;
 
   @Prop()
-  profilePicture?: string;
+  avatar?: string;
 
   @Prop({ default: Date.now })
   lastLogin: Date;

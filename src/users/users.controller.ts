@@ -183,7 +183,7 @@ export class UsersController {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
 
       return await this.usersService.updateProfile(req.user.userId, {
-        profilePicture: uploadResult.secure_url,
+        avatar: uploadResult.secure_url,
       });
     } catch (error) {
       return {

@@ -5,5 +5,5 @@ export class UpdateProfileDto {
   username?: string;
 
   @ApiProperty({ required: false })
-  profilePicture?: string;
+  avatar?: string;
 }

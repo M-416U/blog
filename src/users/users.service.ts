@@ -61,7 +61,7 @@ export class UsersService {
   }
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
     return this.userModel
-      .findOneAndDelete({ _id: userId }, { $set: updateData })
+      .findOneAndUpdate({ _id: userId }, { $set: updateData })
       .select("-passwordHash");
   }
   async findOne(userId: string) {

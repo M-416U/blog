@@ -38,6 +38,7 @@ export class AuthService {
       lastLogin: new Date(),
       viewedPosts: [],
     });
+    console.log(user);
 
     const token = this.jwtService.sign({
       sub: user._id,
