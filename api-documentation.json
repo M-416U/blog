@@ -27,15 +27,23 @@
       "description": "Register new user",
       "body": {
         "email": "string",
+        "username": "string",
         "password": "string",
-        "role": "enum['superadmin', 'admin', 'writer', 'user']"
+        "avatar": "string?",
+        "interests": "string[]?"
       },
       "responses": {
         "201": {
-          "description": "User registered successfully"
+          "description": "User registered successfully",
+          "data": {
+            "token": "string"
+          }
         },
-        "400": {
-          "description": "Email already exists"
+        "401": {
+          "description": "Email or username already exists"
+        },
+        "422": {
+          "description": "Validation error"
         }
       }
     }
