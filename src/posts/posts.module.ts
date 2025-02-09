@@ -4,11 +4,13 @@ import { PostsController } from "./posts.controller";
 import { PostsService } from "./posts.service";
 import { Post, PostSchema } from "./schemas/post.schema";
 import { UsersModule } from "src/users/users.module";
+import { CloudinaryModule } from "src/cloudinary/cloudinary.module";
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
     UsersModule,
+    CloudinaryModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],
