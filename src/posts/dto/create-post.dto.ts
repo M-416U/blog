@@ -9,4 +9,6 @@ export class CreatePostDto {
 
   @ApiProperty({ example: ["nestjs", "backend"] })
   tags: string[];
+  @ApiProperty({ required: false })
+  thumbnail?: string;
 }

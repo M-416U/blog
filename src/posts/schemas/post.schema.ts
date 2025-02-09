@@ -10,6 +10,9 @@ export class Post {
   @Prop({ required: true })
   content: string; // Raw markdown
 
+  @Prop({ required: true })
+  thumbnail: string;
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
   author: User;
 

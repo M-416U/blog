@@ -8,9 +8,17 @@ import {
   Put,
   Query,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from "@nestjs/swagger";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { CreatePostDto } from "./dto/create-post.dto";
@@ -19,24 +27,56 @@ import { PostsService } from "./posts.service";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import { UpdatePostDto } from "./dto/update-post.dto";
 import { ContentStatusDto } from "./dto/content-status.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { CloudinaryService } from "src/cloudinary/cloudinary.service";
 
 @ApiTags("Posts")
 @Controller("posts")
 export class PostsController {
-  constructor(private postsService: PostsService) {}
+  constructor(
+    private postsService: PostsService,
+    private readonly cloudinaryService: CloudinaryService
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("writer", "admin")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a new post (Writer/Admin)" })
+  @UseInterceptors(FileInterceptor("thumbnail"))
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        content: { type: "string" },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+        },
+        thumbnail: {
+          type: "string",
+          format: "binary",
+        },
+      },
+    },
+  })
   async createPost(
     @Body() createPostDto: CreatePostDto,
+    @UploadedFile() thumbnail: Express.Multer.File,
     @Request() req: { user: User }
   ) {
-    return this.postsService.createPost(createPostDto, req.user._id);
+    let thumbnailUrl = null;
+    if (thumbnail) {
+      const uploadResult = await this.cloudinaryService.uploadFile(thumbnail);
+      thumbnailUrl = uploadResult.secure_url;
+    }
+    return this.postsService.createPost(
+      { ...createPostDto, thumbnail: thumbnailUrl },
+      req.user._id
+    );
   }
-
   @Get()
   @ApiOperation({ summary: "Get paginated posts list" })
   async getPosts(
