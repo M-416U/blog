@@ -29,6 +29,7 @@ import { UpdatePostDto } from "./dto/update-post.dto";
 import { ContentStatusDto } from "./dto/content-status.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CloudinaryService } from "src/cloudinary/cloudinary.service";
+import { JWTUser } from "@types";
 
 @ApiTags("Posts")
 @Controller("posts")
@@ -65,7 +66,7 @@ export class PostsController {
   async createPost(
     @Body() createPostDto: CreatePostDto,
     @UploadedFile() thumbnail: Express.Multer.File,
-    @Request() req: { user: User }
+    @Request() req: { user: JWTUser }
   ) {
     let thumbnailUrl = null;
     if (thumbnail) {
@@ -74,7 +75,7 @@ export class PostsController {
     }
     return this.postsService.createPost(
       { ...createPostDto, thumbnail: thumbnailUrl },
-      req.user._id
+      req.user.userId
     );
   }
   @Get()
@@ -104,7 +105,7 @@ export class PostsController {
     @Body() updatePostDto: UpdatePostDto,
     @Request() req: { user: User }
   ) {
-    return this.postsService.updatePost(id, updatePostDto, req.user);
+    return await this.postsService.updatePost(id, updatePostDto, req.user);
   }
 
   @Delete(":id")
@@ -124,9 +125,9 @@ export class PostsController {
   async togglePublishStatus(
     @Param("id") id: string,
     @Body() contentStatusDto: ContentStatusDto,
-    @Request() req: { user: User }
+    @Request() req: { user: JWTUser }
   ) {
-    return this.postsService.updatePublishStatus(
+    return await this.postsService.updatePublishStatus(
       id,
       contentStatusDto.status,
       req.user

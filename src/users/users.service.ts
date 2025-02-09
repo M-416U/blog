@@ -33,14 +33,16 @@ export class UsersService {
     });
 
     return {
-      id: user._id,
+      userId: user._id,
       email: user.email,
       role: user.role,
     };
   }
 
   async updateRole(userId: string, newRole: string) {
-    const user = await this.userModel.findById(userId);
+    const user = await this.userModel.findById(
+      new mongoose.Types.ObjectId(userId)
+    );
     if (!user) {
       throw new NotFoundException("User not found");
     }
@@ -54,14 +56,17 @@ export class UsersService {
     await user.save();
 
     return {
-      id: user._id,
+      userId: user._id,
       email: user.email,
       role: user.role,
     };
   }
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
-    return this.userModel
-      .findOneAndUpdate({ _id: userId }, { $set: updateData })
+    return await this.userModel
+      .findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $set: updateData }
+      )
       .select("-passwordHash");
   }
   async findOne(userId: string) {
@@ -70,7 +75,7 @@ export class UsersService {
       .select("-passwordHash -_v");
   }
   async findMany(query: FilterQuery<User>) {
-    return this.userModel.find(query).select("-passwordHash -_v");
+    return await this.userModel.find(query).select("-passwordHash -_v");
   }
 
   async changePassword(
@@ -78,32 +83,44 @@ export class UsersService {
     oldPassword: string,
     newPassword: string
   ) {
-    const user = await this.userModel.findById(userId);
+    const user = await this.userModel.findById(
+      new mongoose.Types.ObjectId(userId)
+    );
     if (!(await bcrypt.compare(oldPassword, user.passwordHash))) {
       throw new UnauthorizedException("Invalid old password");
     }
     user.passwordHash = await bcrypt.hash(newPassword, 10);
-    return user.save();
+    return await user.save();
   }
   async savePreferences(
     userId: string,
     preferences: UserPreferencesDto
   ): Promise<User> {
     const updatedUser = await this.userModel
-      .findByIdAndUpdate(userId, { preferences }, { new: true })
+      .findByIdAndUpdate(
+        new mongoose.Types.ObjectId(userId),
+        { preferences },
+        { new: true }
+      )
       .select("preferences");
 
     return updatedUser;
   }
 
   async getPreferences(userId: string) {
-    const user = await this.userModel.findById(userId).select("preferences");
+    const user = await this.userModel
+      .findById(new mongoose.Types.ObjectId(userId))
+      .select("preferences");
 
     return user.preferences;
   }
   async updateInterests(userId: string, interests: string[]) {
-    return this.userModel
-      .findByIdAndUpdate(userId, { $set: { interests } }, { new: true })
+    return await this.userModel
+      .findByIdAndUpdate(
+        new mongoose.Types.ObjectId(userId),
+        { $set: { interests } },
+        { new: true }
+      )
       .select("-passwordHash");
   }
 }

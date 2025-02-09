@@ -9,6 +9,7 @@ import { Post } from "./schemas/post.schema";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { User } from "../users/schemas/user.schema";
 import { UpdatePostDto } from "./dto/update-post.dto";
+import { JWTUser } from "@types";
 
 @Injectable()
 export class PostsService {
@@ -31,7 +32,7 @@ export class PostsService {
   async getPost(postId: string): Promise<Post> {
     const post = await this.postModel
       .findById(postId)
-      .populate("author", "username profilePicture")
+      .populate("author", "username avatar")
       .exec();
 
     if (!post) {
@@ -48,7 +49,7 @@ export class PostsService {
 
     const posts = await this.postModel
       .find(query)
-      .populate("author", "username profilePicture")
+      .populate("author", "username avatar")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -86,7 +87,7 @@ export class PostsService {
 
     return this.postModel
       .findByIdAndUpdate(id, updatePostDto, { new: true })
-      .populate("author", "username profilePicture");
+      .populate("author", "username avatar");
   }
 
   async deletePost(id: string, user: User): Promise<{ deleted: boolean }> {
@@ -110,28 +111,27 @@ export class PostsService {
   async updatePublishStatus(
     id: string,
     status: boolean,
-    user: User
+    user: JWTUser
   ): Promise<Post> {
     const post = await this.postModel.findById(id);
 
     if (!post) {
       throw new NotFoundException("Post not found");
     }
-
     if (
-      post.author.toString() !== user._id.toString() &&
+      post.author.toString() !== user.userId.toString() &&
       user.role !== "admin"
     ) {
       throw new ForbiddenException("Not authorized to modify this post");
     }
 
-    return this.postModel
+    return await this.postModel
       .findByIdAndUpdate(
         id,
         { published: status, publishedAt: status ? new Date() : null },
         { new: true }
       )
-      .populate("author", "username profilePicture");
+      .populate("author", "username avatar");
   }
 
   async updateFeatureStatus(id: string, status: boolean): Promise<Post> {
@@ -147,6 +147,6 @@ export class PostsService {
         { featured: status, featuredAt: status ? new Date() : null },
         { new: true }
       )
-      .populate("author", "username profilePicture");
+      .populate("author", "username avatar");
   }
 }
