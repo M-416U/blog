@@ -15,4 +15,7 @@ export class UserPreferencesDto {
   @ApiProperty({ required: false })
   @IsString()
   theme?: "light" | "dark";
+  @ApiProperty({ required: false })
+  @IsString()
+  lang?: "en" | "ar";
 }
